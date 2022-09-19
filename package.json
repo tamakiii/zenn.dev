@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/tamakiii/zenn.dev/issues"
   },
-  "homepage": "https://github.com/tamakiii/zenn.dev#readme"
+  "homepage": "https://github.com/tamakiii/zenn.dev#readme",
+  "dependencies": {
+    "zenn-cli": "^0.1.125"
+  }
 }
