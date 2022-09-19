@@ -1,6 +1,8 @@
 .PHONY: help setup install clean
 .PHONY: article book
 
+SLUG :=
+
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
@@ -11,10 +13,10 @@ install: \
 	node_modules
 
 article:
-	npx -y zenn new:article
+	npx -y zenn new:article --slug $(SLUG)
 
 book:
-	npx -y zenn new:article
+	npx -y zenn new:article --slug $(SLUG)
 
 preview:
 	npx -y zenn preview
