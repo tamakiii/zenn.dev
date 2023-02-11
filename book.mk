@@ -12,9 +12,8 @@ MACHINE_READABLE := false
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-setup:
-	mkdir books
-	touch books/.gitkeep
+setup: \
+	books/.gitkeep
 
 new:
 	npx -y zenn new:article \
@@ -24,3 +23,9 @@ new:
 		--emoji $(EMOJI) \
 		--published $(PUBLISHED) \
 		--machine-readable $(MACHINE_READABLE)
+
+books/.gitkeep: books
+	touch $@
+
+books:
+	mkdir $@
