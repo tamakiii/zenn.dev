@@ -1,4 +1,4 @@
-.PHONY: help setup install clean
+.PHONY: help setup dependency install clean
 .PHONY: article book
 
 SLUG :=
@@ -6,17 +6,22 @@ SLUG :=
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-setup:
+setup: \
+	dependency \
+	articles \
+	books
+
+dependency:
 	which npx
 
 install: \
 	node_modules
 
-article:
-	npx -y zenn new:article --slug $(SLUG)
+articles:
+	$(MAKE) -f article.mk setup
 
-book:
-	npx -y zenn new:article --slug $(SLUG)
+books:
+	$(MAKE) -f book.mk setup
 
 preview:
 	npx -y zenn preview
