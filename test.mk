@@ -9,7 +9,7 @@ setup: \
 install:
 	cd dependency/zenn-dev/zenn-editor/packages/zenn-cli && pnpm install
 	cd dependency/zenn-dev/zenn-editor/packages/zenn-markdown-html && pnpm install
-	cd --declaration --allowJs --emitDeclarationOnly && pnpm build
+	cd dependency/zenn-dev/zenn-editor/packages/zenn-markdown-html && pnpm build
 
 test:
 	npx --no -- jest
