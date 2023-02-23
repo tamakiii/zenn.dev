@@ -14,6 +14,7 @@ prerequisite:
 
 install: \
 	node_modules
+	$(MAKE) -f dependency.mk $@
 
 update:
 	npm update
