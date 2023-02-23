@@ -1,4 +1,4 @@
-.PHONY: help setup new
+.PHONY: help setup
 
 TYPES := tech idea
 TYPE := $(firstword $(TYPES))

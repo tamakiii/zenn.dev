@@ -1,4 +1,4 @@
-.PHONY: help setup new
+.PHONY: help setup
 
 PUBLISHED := false
 MACHINE_READABLE := false
