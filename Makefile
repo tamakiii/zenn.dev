@@ -1,4 +1,4 @@
-.PHONY: help setup dependency install clean
+.PHONY: help setup prerequisite install clean
 .PHONY: article book
 
 SLUG :=
@@ -7,11 +7,11 @@ help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup: \
-	dependency \
+	prerequisite \
 	articles \
 	books
 
-dependency:
+prerequisite:
 	which npx
 
 install: \
