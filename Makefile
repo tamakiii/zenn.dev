@@ -1,30 +1,28 @@
-.PHONY: help setup dependency install clean
-.PHONY: article book
-
-SLUG :=
+.PHONY: help setup initialize prerequisite install update outdated preview clean
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup: \
-	dependency \
-	articles \
-	books
+	prerequisite
 
-dependency:
+initialize:
+	npx --no -- zenn init
+
+prerequisite:
 	which npx
 
 install: \
 	node_modules
 
-articles:
-	$(MAKE) -f article.mk setup
+update:
+	npm update
 
-books:
-	$(MAKE) -f book.mk setup
+outdated:
+	npm outdated
 
 preview:
-	npx -y zenn preview
+	npx --no -- zenn preview
 
 node_modules:
 	npm install

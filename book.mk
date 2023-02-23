@@ -1,31 +1,27 @@
-.PHONY: help setup new
+.PHONY: help setup list
 
-PREFIX ?= $(shell whoami)
-DATE ?= $(shell date +%Y%m%d)
-SLUG ?= $(PREFIX)_$(DATE)
-TITLE ?=  $(DATE)
-TYPE := .tech
-EMOJI := 🧸
 PUBLISHED := false
 MACHINE_READABLE := false
+SUMMARY :=
+PRICE := 0
+FORMATS := json tsv
+FORMAT := $(firstword $(FORMATS))
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-setup: \
-	books/.gitkeep
+setup:
+	test -d books
 
-new:
-	npx -y zenn new:article \
-		--slug $(SLUG) \
-		--title $(TITLE) \
-		--type $(TYPE) \
-		--emoji $(EMOJI) \
-		--published $(PUBLISHED) \
-		--machine-readable $(MACHINE_READABLE)
+list:
+	[ $(FORMAT) == "json" ] \
+		&& npx --no -- zenn list:books --format=$(FORMAT) | jq 2> /dev/null \
+		|| npx --no -- zenn list:books --format=$(FORMAT)
 
-books/.gitkeep: books
-	touch $@
-
-books:
-	mkdir $@
+books/%.md: | books
+	npx --no -- zenn new:book \
+		--slug=$(patsubst $|/%.md,%,$@) \
+		--title=$(patsubst $|/%.md,%,$@) \
+		--published=$(PUBLISHED) \
+		--summary=$(SUMMARY) \
+		--price=$(PRICE)

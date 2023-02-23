@@ -1,31 +1,29 @@
-.PHONY: help setup new
+.PHONY: help setup list
 
-PREFIX ?= $(shell whoami)
-DATE ?= $(shell date +%Y%m%d)
-SLUG ?= $(PREFIX)_$(DATE)
-TITLE ?=  $(DATE)
-TYPE := .tech
+TYPES := tech idea
+TYPE := $(firstword $(TYPES))
 EMOJI := 🧸
 PUBLISHED := false
 MACHINE_READABLE := false
+FORMATS := json tsv
+FORMAT := $(firstword $(FORMATS))
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-setup: \
-	articles/.gitkeep
+setup:
+	test -d articles
 
-new:
-	 npx -y zenn new:article \
-		--slug $(SLUG) \
-		--title $(TITLE) \
-		--type $(TYPE) \
-		--emoji $(EMOJI) \
-		--published $(PUBLISHED) \
-		--machine-readable $(MACHINE_READABLE)
+list:
+	[ $(FORMAT) == "json" ] \
+		&& npx --no -- zenn list:articles --format=$(FORMAT) | jq 2> /dev/null \
+		|| npx --no -- zenn list:articles --format=$(FORMAT)
 
-articles/.gitkeep: articles
-	touch $@
-
-articles:
-	mkdir $@
+articles/%.md: | articles
+	npx --no -- zenn new:article \
+		--slug=$(patsubst $|/%.md,%,$@) \
+		--title=$(patsubst $|/%.md,%,$@) \
+		--type=$(TYPE) \
+		--emoji=$(EMOJI) \
+		--published=$(PUBLISHED) \
+		--machine-readable=$(MACHINE_READABLE)
