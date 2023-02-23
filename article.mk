@@ -1,10 +1,7 @@
 .PHONY: help setup new
 
-PREFIX ?= $(shell whoami)
-DATE ?= $(shell date +%Y%m%d)
-SLUG ?= $(PREFIX)_$(DATE)
-TITLE ?=  $(DATE)
-TYPE := .tech
+TYPES := tech idea
+TYPE := $(firstword $(TYPES))
 EMOJI := 🧸
 PUBLISHED := false
 MACHINE_READABLE := false
@@ -13,11 +10,12 @@ help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup:
+	test -d articles
 
-new:
-	 npx --no -- zenn new:article \
-		--slug $(SLUG) \
-		--title $(TITLE) \
+articles/%.md: | articles
+	npx --no -- zenn new:article \
+		--slug $(patsubst $|/%.md,%,$@) \
+		--title $(patsubst $|/%.md,%,$@) \
 		--type $(TYPE) \
 		--emoji $(EMOJI) \
 		--published $(PUBLISHED) \
