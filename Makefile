@@ -1,4 +1,4 @@
-.PHONY: help setup initialize prerequisite install update preview clean
+.PHONY: help setup initialize prerequisite install update outdated preview clean
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
@@ -17,6 +17,9 @@ install: \
 
 update:
 	npm update
+
+outdated:
+	npm outdated
 
 preview:
 	npx --no -- zenn preview
