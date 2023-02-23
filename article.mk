@@ -13,7 +13,7 @@ help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup: \
-	articles/.gitkeep
+	articles
 
 new:
 	 npx -y zenn new:article \
@@ -23,9 +23,6 @@ new:
 		--emoji $(EMOJI) \
 		--published $(PUBLISHED) \
 		--machine-readable $(MACHINE_READABLE)
-
-articles/.gitkeep: articles
-	touch $@
 
 articles:
 	mkdir $@
