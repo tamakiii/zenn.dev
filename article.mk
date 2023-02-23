@@ -14,9 +14,9 @@ setup:
 
 articles/%.md: | articles
 	npx --no -- zenn new:article \
-		--slug $(patsubst $|/%.md,%,$@) \
-		--title $(patsubst $|/%.md,%,$@) \
-		--type $(TYPE) \
-		--emoji $(EMOJI) \
-		--published $(PUBLISHED) \
-		--machine-readable $(MACHINE_READABLE)
+		--slug=$(patsubst $|/%.md,%,$@) \
+		--title=$(patsubst $|/%.md,%,$@) \
+		--type=$(TYPE) \
+		--emoji=$(EMOJI) \
+		--published=$(PUBLISHED) \
+		--machine-readable=$(MACHINE_READABLE)
