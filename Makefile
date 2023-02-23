@@ -1,4 +1,4 @@
-.PHONY: help setup initialize prerequisite install update clean
+.PHONY: help setup initialize prerequisite install update preview clean
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
