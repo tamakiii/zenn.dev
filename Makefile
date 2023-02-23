@@ -1,4 +1,4 @@
-.PHONY: help setup init prerequisite install clean
+.PHONY: help setup initialize prerequisite install clean
 .PHONY: article book
 
 SLUG :=
@@ -7,10 +7,9 @@ help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup: \
-	prerequisite \
-	init
+	prerequisite
 
-init:
+initialize:
 	npx --no -- zenn init
 
 prerequisite:
