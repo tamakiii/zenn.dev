@@ -1,4 +1,4 @@
-.PHONY: help setup prerequisite install clean
+.PHONY: help setup init prerequisite install clean
 .PHONY: article book
 
 SLUG :=
@@ -8,20 +8,16 @@ help:
 
 setup: \
 	prerequisite \
-	articles \
-	books
+	init
+
+init:
+	npx --no -- zenn init
 
 prerequisite:
 	which npx
 
 install: \
 	node_modules
-
-articles:
-	$(MAKE) -f article.mk setup
-
-books:
-	$(MAKE) -f book.mk setup
 
 preview:
 	npx -y zenn preview

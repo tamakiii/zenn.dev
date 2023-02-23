@@ -12,8 +12,7 @@ MACHINE_READABLE := false
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-setup: \
-	articles
+setup:
 
 new:
 	 npx --no -- zenn new:article \
@@ -23,6 +22,3 @@ new:
 		--emoji $(EMOJI) \
 		--published $(PUBLISHED) \
 		--machine-readable $(MACHINE_READABLE)
-
-articles:
-	mkdir $@
