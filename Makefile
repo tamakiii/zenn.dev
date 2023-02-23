@@ -5,7 +5,7 @@ help:
 
 setup: \
 	prerequisite ;
-	$(MAKE) -f dependency.mk $@
+	$(MAKE) -f dependency.mk build
 
 initialize:
 	npx --no -- zenn init
@@ -31,5 +31,5 @@ node_modules:
 uninstall:
 	rm -rf node_modules
 
-clean:
-	$(MAKE) -f dependency.mk $@
+teardown:
+	$(MAKE) -f dependency.mk clean
