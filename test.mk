@@ -1,4 +1,4 @@
-.PHONY: help setup install build test clean
+.PHONY: help setup install build test clean teardown
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
@@ -6,11 +6,17 @@ help:
 setup: \
 	test/dependency
 
-install: | dependency/zenn-dev/zenn-editor/packages/zenn-cli dependency/zenn-dev/zenn-editor/packages/zenn-markdown-html
-	$(foreach directory,$|,cd && pnpm $@)
+install:
+	cd dependency/zenn-dev/zenn-editor/packages/zenn-cli && pnpm install
+	cd dependency/zenn-dev/zenn-editor/packages/zenn-markdown-html && pnpm install
+	cd --declaration --allowJs --emitDeclarationOnly && pnpm build
 
-build: | dependency/zenn-dev/zenn-editor/packages/zenn-markdown-html
-	cd $| && pnpm $@
+build:
+	npx --no -- tsc \
+		--declaration \
+		--emitDeclarationOnly \
+		--outDir test/types/zenn-model \
+		dependency/zenn-dev/zenn-editor/packages/zenn-model/src/*.ts
 
 test:
 	npx --no -- jest
@@ -19,4 +25,7 @@ test/dependency: | dependency
 	ln -s ../$| $@
 
 clean:
+	rm -rf dependency/zenn-dev/zenn-model
+
+teardown:
 	rm -rf test/dependency
