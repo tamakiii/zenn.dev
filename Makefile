@@ -4,7 +4,8 @@ help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
 setup: \
-	prerequisite
+	prerequisite ;
+	$(MAKE) -f dependency.mk build
 
 initialize:
 	npx --no -- zenn init
@@ -27,5 +28,8 @@ preview:
 node_modules:
 	npm install
 
-clean:
+uninstall:
 	rm -rf node_modules
+
+teardown:
+	$(MAKE) -f dependency.mk clean
