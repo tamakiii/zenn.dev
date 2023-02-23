@@ -1,11 +1,11 @@
-.PHONY: help isntall rev-parse clean
+.PHONY: help setup rev-parse clean
 
 VERSION_ZENN_EDITOR :=  0.1.140
 
 help:
 	@cat $(firstword $(MAKEFILE_LIST))
 
-install: \
+setup: \
 	dependency/zenn-dev/zenn-editor
 
 rev-parse: | dependency/zenn-dev/zenn-editor
