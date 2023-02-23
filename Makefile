@@ -22,7 +22,7 @@ update:
 	npm update
 
 preview:
-	npx -y zenn preview
+	npx --no -- zenn preview
 
 node_modules:
 	npm install
