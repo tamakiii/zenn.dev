@@ -16,7 +16,7 @@ setup: \
 	books
 
 new:
-	npx -y zenn new:article \
+	npx --no -- zenn new:article \
 		--slug $(SLUG) \
 		--title $(TITLE) \
 		--type $(TYPE) \
