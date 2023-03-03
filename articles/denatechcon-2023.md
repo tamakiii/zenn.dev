@@ -3,7 +3,7 @@ title: "DeNA TechCon 2023 公開資料まとめ"
 emoji: "👀"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: ["リンク集", "まとめ", "カンファレンス", "勉強会"]
-published: false
+published: true
 ---
 
 2023年3月2日に開催された DeNA TechCon 2023 に関する、現時点での公開資料をまとめました。
