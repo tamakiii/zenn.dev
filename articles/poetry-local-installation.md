@@ -1,8 +1,8 @@
 ---
 title: "poetry-local-installation"
-emoji: "🧸"
+emoji: "🐍"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ['poetry', 'python']
+topics: ['poetry', 'python', 'pip']
 published: false
 ---
 - `python3 -m pip install poetry`
