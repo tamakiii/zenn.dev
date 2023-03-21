@@ -13,4 +13,11 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/usr/local python3
 
 WORKDIR /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation
 
+COPY pyproject.toml /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/pyproject.toml
+COPY poetry.lock /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/poetry.lock
+COPY poetry.toml /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/poetry.toml
+COPY Makefile /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/Makefile
 
+RUN make -C /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation install
+
+COPY . /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation
