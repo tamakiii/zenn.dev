@@ -8,6 +8,7 @@ packages = [{include = "poetry_local_installation"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pendulum = "^2.1.2"
 
 
 [build-system]
