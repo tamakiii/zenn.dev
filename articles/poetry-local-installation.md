@@ -1,0 +1,429 @@
+---
+title: "poetry でプロジェクト内にパッケージをインストールする"
+emoji: "🐍"
+type: "tech" # tech: 技術記事 / idea: アイデア
+topics: ['poetry', 'python', 'pip', 'venv', 'virtualenv']
+published: true
+---
+
+## TL;DR
+- `poetry install` のインストール先は `{cache-dir}/virtualenvs/...`
+  - 扱いにくいのでプロジェクト内に配置したい
+- `poetry config --local virtualenvs.in-project true` でプロジェクト内に作るようになる
+  - `poetry.toml` が生成されて `.venv` にインストールされるようになる
+- `virtualenv: error: argument --prompt: expected one argument` で困ったら
+  - see: https://gist.github.com/tamakiii/6946265e53872882d2114b1a50bb828a
+  - `Python 3.11.2` と `Poetry (version 1.4.1)` `virtualenv 20.21.0` の食い合わせが悪そう
+- `virtualenvs.create` を `false` にしてしまってもいいかもしれない
+  - `virtualenv` を使いたいモチベーションがないのであれば
+
+## 資料・免責
+- `Makefile` や `Dockerfile`、`pyproject.toml` などはここにあります
+  - https://github.com/tamakiii/zenn.dev/tree/main/articles/poetry-local-installation
+- `poetry` はほぼ初見で、ググってもそれらしい記事が出てこなくて書いた備忘録です
+
+## デフォルトの挙動
+通常、`poetry install` は `virtualenv` を使って `cache-dir` 下に環境を作る動きをする。
+```sh
+bash-5.2# poetry add pendulum
+Creating virtualenv poetry-local-installation-VNqQnkCB-py3.9 in /root/.cache/pypoetry/virtualenvs
+Using version ^2.1.2 for pendulum
+
+Updating dependencies
+Resolving dependencies... Downloading https://files.pythonhosted.org/packages/e0/4f/4474bda990ee740a020cbc3eb271925ef7
+Resolving dependencies... Downloading https://files.pythonhosted.org/packages/e0/4f/4474bda990ee740a020cbc3eb271925ef7
+Resolving dependencies... Downloading https://files.pythonhosted.org/packages/e0/4f/4474bda990ee740a020cbc3eb271925ef7
+Resolving dependencies... (1.2s)
+
+Writing lock file
+
+Package operations: 4 installs, 0 updates, 0 removals
+
+  • Installing six (1.16.0)
+  • Installing python-dateutil (2.8.2)
+  • Installing pytzdata (2020.1)
+  • Installing pendulum (2.1.2)
+
+bash-5.2# ls -lsah /root/.cache/pypoetry/virtualenvs/poetry-local-installation-VNqQnkCB-py3.9/
+total 28K
+4.0K drwxr-xr-x 5 root root 4.0K Mar 21 07:29 .
+4.0K drwxr-xr-x 3 root root 4.0K Mar 21 07:29 ..
+4.0K -rw-r--r-- 1 root root   40 Mar 21 07:29 .gitignore
+4.0K drwxr-xr-x 2 root root 4.0K Mar 21 07:29 bin
+4.0K drwxr-xr-x 3 root root 4.0K Mar 21 07:29 lib
+4.0K drwxr-xr-x 3 root root 4.0K Mar 21 07:29 lib64
+4.0K -rw-r--r-- 1 root root  250 Mar 21 07:29 pyvenv.cfg
+```
+
+ひとつの Python しか入っていない環境ではいらない動きだし、`Makefile` を書く都合上プロジェクト内に生成できると `Makefile` が書きやすい。
+
+また、インストールしたパッケージの `bin` などを `$PATH` に含めたい場合、所定の場所にインストールされる方が扱いやすい。
+```sh
+# こういうのをあまり書きたくない
+export PATH="$(poetry -C /path/to/project env info -p)/bin:$PATH"
+```
+
+## 初期化
+`poetry` は `pyproject.toml` と `poetry.lock`、`poetry.toml` などを扱う。
+`pyproject.toml` は `poetry init` で生成する。
+```sh
+bash-5.2# poetry init
+
+This command will guide you through creating your pyproject.toml config.
+
+Package name [poetry-local-installation]:
+Version [0.1.0]:
+Description []:
+Author [None, n to skip]:  tamakiii <tamakiii@users.noreply.github.com>
+License []:
+Compatible Python versions [^3.9]:
+
+Would you like to define your main dependencies interactively? (yes/no) [yes]
+You can specify a package in the following forms:
+  - A single name (requests): this will search for matches on PyPI
+  - A name and a constraint (requests@^2.23.0)
+  - A git url (git+https://github.com/python-poetry/poetry.git)
+  - A git url with a revision (git+https://github.com/python-poetry/poetry.git#develop)
+  - A file path (../my-package/my-package.whl)
+  - A directory (../my-package/)
+  - A url (https://example.com/packages/my-package-0.1.0.tar.gz)
+
+Package to add or search for (leave blank to skip):
+
+Would you like to define your development dependencies interactively? (yes/no) [yes]
+Package to add or search for (leave blank to skip):
+
+Generated file
+
+[tool.poetry]
+name = "poetry-local-installation"
+version = "0.1.0"
+description = ""
+authors = ["tamakiii <tamakiii@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "poetry_local_installation"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+Do you confirm generation? (yes/no) [yes] yes
+```
+
+`poetry.lock` は `poetry install` や `poetry add` 時に生成・更新される。
+```sh
+bash-5.2# poetry add pendulum
+Creating virtualenv poetry-local-installation-VNqQnkCB-py3.9 in /root/.cache/pypoetry/virtualenvs
+Using version ^2.1.2 for pendulum
+...
+
+bash-5.2# head -n 11 poetry.lock
+# This file is automatically @generated by Poetry 1.4.1 and should not be changed by hand.
+
+[[package]]
+name = "pendulum"
+version = "2.1.2"
+description = "Python datetimes made easy"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "pendulum-2.1.2-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:b6c352f4bd32dff1ea7066bd31ad0f71f8d8100b9ff709fb343f3b86cee43efe"},
+```
+
+## 設定
+設定は大きく分けてグローバルの設定とローカルの設定がある。
+```sh
+bash-5.2# poetry config --list
+cache-dir = "/root/.cache/pypoetry"
+experimental.new-installer = true
+experimental.system-git-client = false
+installer.max-workers = null
+installer.modern-installation = true
+installer.no-binary = null
+installer.parallel = true
+virtualenvs.create = true
+virtualenvs.in-project = null
+virtualenvs.options.always-copy = false
+virtualenvs.options.no-pip = false
+virtualenvs.options.no-setuptools = false
+virtualenvs.options.system-site-packages = false
+virtualenvs.path = "{cache-dir}/virtualenvs"  # /root/.cache/pypoetry/virtualenvs
+virtualenvs.prefer-active-python = false
+virtualenvs.prompt = "{project_name}-py{python_version}"
+```
+```sh
+bash-5.2# poetry config --local --list
+cache-dir = "/root/.cache/pypoetry"
+experimental.new-installer = true
+experimental.system-git-client = false
+installer.max-workers = null
+installer.modern-installation = true
+installer.no-binary = null
+installer.parallel = true
+virtualenvs.create = true
+virtualenvs.in-project = null
+virtualenvs.options.always-copy = false
+virtualenvs.options.no-pip = false
+virtualenvs.options.no-setuptools = false
+virtualenvs.options.system-site-packages = false
+virtualenvs.path = "{cache-dir}/virtualenvs"  # /root/.cache/pypoetry/virtualenvs
+virtualenvs.prefer-active-python = false
+virtualenvs.prompt = "{project_name}-py{python_version}"
+```
+
+`poetry config <key>` で設定を表示、`poetry config <key> <value>` で設定、`poetry config <key> --unset` で初期化できる。
+```sh
+bash-5.2# poetry config virtualenvs.in-project
+null
+bash-5.2# poetry config --local virtualenvs.in-project
+null
+```
+
+また、パッケージのインストール先は `poetry env info -p` で確認できる。
+```sh
+bash-5.2# poetry env info -p
+/root/.cache/pypoetry/virtualenvs/poetry-local-installation-VNqQnkCB-py3.9
+```
+
+ただし、`poetry install` 前にこれを実行すると Exit status non-zero を返す。
+```sh
+bash-5.2# poetry env info -p
+bash-5.2# echo $?
+1
+```
+
+`poetry config --local <key> <value>` で `poetry.toml` が生成・更新され、プロジェクト用の設定ができる。
+```sh
+bash-5.2# poetry config --local virtualenvs.in-project true
+bash-5.2# poetry config --local virtualenvs.in-project
+true
+
+bash-5.2# cat poetry.toml
+[virtualenvs]
+in-project = true
+```
+
+## プロジェクト内にインストールする
+`in-project` を `true` に設定すると、プロジェクト内に `.venv` を作るようになる。ただし、このとき Exit status は non-zero になる。
+```sh
+bash-5.2# poetry install
+Creating virtualenv poetry-local-installation in /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/.venv
+Installing dependencies from lock file
+
+Package operations: 4 installs, 0 updates, 0 removals
+
+  • Installing six (1.16.0)
+  • Installing python-dateutil (2.8.2)
+  • Installing pytzdata (2020.1)
+  • Installing pendulum (2.1.2)
+
+/usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/poetry_local_installation does not contain any element
+
+bash-5.2# echo $?
+1
+```
+
+これは[プロジェクトにインストールすべきパッケージがないため](https://cocoatomo.github.io/poetry-ja/cli/)で、`--no-root` をつける必要がある。
+```sh
+bash-5.2# poetry install --help
+
+Description:
+  Installs the project dependencies.
+
+Usage:
+  install [options]
+
+Options:
+      ...
+      --no-root              Do not install the root package (the current project).
+      ...
+```
+```sh
+bash-5.2# poetry install --no-root
+...
+bash-5.2# echo $?
+0
+```
+
+## Makefile, $PATH
+ということで `Makefile` は簡潔に書けて、
+```makefile
+.PHONY: help install uninstall
+
+help:
+	@cat $(firstword $(MAKEFILE_LIST))
+
+install: \
+	.venv
+
+uninstall:
+	rm -rf .venv
+
+.venv:
+	poetry install --no-root
+```
+
+`$PATH` も固定値が書けた。
+```sh
+bash-5.2# which wheel
+which: no wheel in (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin)
+
+bash-5.2# export PATH="/usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/.venv/bin:$PATH"
+bash-5.2# which wheel
+/usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/.venv/bin/wheel
+```
+
+`.venv` 内はこんな具合。もうちょっと改善の余地はありそう（補足2 参照）。
+```sh
+bash-5.2# ls -lsah .venv
+total 8.0K
+   0 drwxr-xr-x  7 root root 224 Mar 21 08:26 .
+   0 drwxrwxr-x  9 root root 288 Mar 21 08:26 ..
+4.0K -rw-r--r--  1 root root  40 Mar 21 08:26 .gitignore
+   0 drwxr-xr-x 19 root root 608 Mar 21 08:26 bin
+   0 drwxr-xr-x  3 root root  96 Mar 21 08:26 lib
+   0 drwxr-xr-x  3 root root  96 Mar 21 08:26 lib64
+4.0K -rw-r--r--  1 root root 250 Mar 21 08:26 pyvenv.cfg
+bash-5.2# ls -lsah .venv/bin
+total 56K
+   0 drwxr-xr-x 19 root root  608 Mar 21 08:26 .
+   0 drwxr-xr-x  7 root root  224 Mar 21 08:26 ..
+4.0K -rw-r--r--  1 root root 2.3K Mar 21 08:26 activate
+4.0K -rw-r--r--  1 root root 1.6K Mar 21 08:26 activate.csh
+4.0K -rw-r--r--  1 root root 3.1K Mar 21 08:26 activate.fish
+4.0K -rw-r--r--  1 root root 3.4K Mar 21 08:26 activate.nu
+4.0K -rw-r--r--  1 root root 1.8K Mar 21 08:26 activate.ps1
+4.0K -rw-r--r--  1 root root 1.2K Mar 21 08:26 activate_this.py
+4.0K -rwxr-xr-x  1 root root  289 Mar 21 08:26 pip
+4.0K -rwxr-xr-x  1 root root  289 Mar 21 08:26 pip-3.9
+4.0K -rwxr-xr-x  1 root root  289 Mar 21 08:26 pip3
+4.0K -rwxr-xr-x  1 root root  289 Mar 21 08:26 pip3.9
+   0 lrwxr-xr-x  1 root root   18 Mar 21 08:26 python -> /usr/bin/python3.9
+   0 lrwxr-xr-x  1 root root    6 Mar 21 08:26 python3 -> python
+   0 lrwxr-xr-x  1 root root    6 Mar 21 08:26 python3.9 -> python
+4.0K -rwxr-xr-x  1 root root  276 Mar 21 08:26 wheel
+4.0K -rwxr-xr-x  1 root root  276 Mar 21 08:26 wheel-3.9
+4.0K -rwxr-xr-x  1 root root  276 Mar 21 08:26 wheel3
+4.0K -rwxr-xr-x  1 root root  276 Mar 21 08:26 wheel3.9
+```
+
+## 補足1
+macOS で HomeBrew 経由で最新版の [`python3`](https://github.com/Homebrew/homebrew-core/blob/b7e525330968bcfe754ea1dd95b3f4768feaa0a0/Formula/python%403.11.rb) をインストールしていると、
+`python3` `poetry` `virtualenv` のバージョンの食い合わせが悪いようで、`poetry add` しようとすると `virtualenv: error: argument --prompt: expected one argument` が出た。
+```sh
+$ python3 -m poetry add shell-gpt
+Creating virtualenv -dotfiles-vt9Uq9JI-py3.11 in /Users/tamakiii/Library/Caches/pypoetry/virtualenvs
+usage: virtualenv [--version] [--with-traceback] [-v | -q] [--read-only-app-data] [--app-data APP_DATA] [--reset-app-data] [--upgrade-embed-wheels] [--discovery {builtin}] [-p py] [--try-first-with py_exe]
+                  [--creator {builtin,cpython3-posix,venv}] [--seeder {app-data,pip}] [--no-seed] [--activators comma_sep_list] [--clear] [--no-vcs-ignore] [--system-site-packages] [--symlinks | --copies] [--no-download | --download]
+                  [--extra-search-dir d [d ...]] [--pip version] [--setuptools version] [--wheel version] [--no-pip] [--no-setuptools] [--no-wheel] [--no-periodic-update] [--symlink-app-data] [--prompt prompt] [-h]
+                  dest
+virtualenv: error: argument --prompt: expected one argument
+```
+
+バージョン情報は以下の通り。
+- `Python 3.11.2`
+- `Poetry (version 1.4.1)`
+- `virtualenv 20.21.0`
+- `macOS 13.2.1`
+
+`virtualenvs.in-project` と同様に `poetry config --local prompt null`（設定される値は `"null"` となってしまうが、まぁはい）で `poetry.toml` に設定を書くと `poetry add` できるようになった。
+
+参考：
+https://gist.github.com/tamakiii/6946265e53872882d2114b1a50bb828a
+
+## 補足2
+`virtualenvs.create` を `false` にしておくと、 `.venv` ではなく `/usr/local/lib64/python3.9/site-packages/...` あたりにインストールするようになる（これでもいい）。
+```sh
+bash-5.2# poetry config virtualenvs.create false
+bash-5.2# poetry install --no-root
+Skipping virtualenv creation, as specified in config file.
+Installing dependencies from lock file
+
+Package operations: 4 installs, 0 updates, 0 removals
+
+  • Installing six (1.16.0)
+  • Installing python-dateutil (2.8.2)
+  • Installing pytzdata (2020.1)
+  • Installing pendulum (2.1.2)
+bash-5.2# ls -lsah /usr/local/lib64/python3.9/site-packages/pendulum
+total 180K
+4.0K drwxr-xr-x  9 root root 4.0K Mar 21 08:57 .
+4.0K drwxr-xr-x  4 root root 4.0K Mar 21 08:57 ..
+ 12K -rw-r--r--  1 root root 8.1K Mar 21 09:00 __init__.py
+4.0K -rw-r--r--  1 root root   22 Mar 21 09:00 __version__.py
+4.0K drwxr-xr-x  2 root root 4.0K Mar 21 08:57 _extensions
+4.0K -rw-r--r--  1 root root 2.8K Mar 21 09:00 constants.py
+ 28K -rw-r--r--  1 root root  25K Mar 21 09:00 date.py
+ 44K -rw-r--r--  1 root root  42K Mar 21 09:00 datetime.py
+ 16K -rw-r--r--  1 root root  13K Mar 21 09:00 duration.py
+4.0K -rw-r--r--  1 root root  100 Mar 21 09:00 exceptions.py
+4.0K drwxr-xr-x  2 root root 4.0K Mar 21 08:57 formatting
+8.0K -rw-r--r--  1 root root 5.2K Mar 21 09:00 helpers.py
+4.0K drwxr-xr-x 20 root root 4.0K Mar 21 08:57 locales
+4.0K drwxr-xr-x  2 root root 4.0K Mar 21 08:57 mixins
+4.0K -rw-r--r--  1 root root 3.4K Mar 21 09:00 parser.py
+4.0K drwxr-xr-x  3 root root 4.0K Mar 21 08:57 parsing
+ 12K -rw-r--r--  1 root root  11K Mar 21 09:00 period.py
+   0 -rw-r--r--  1 root root    0 Mar 21 09:00 py.typed
+8.0K -rw-r--r--  1 root root 7.7K Mar 21 09:00 time.py
+4.0K drwxr-xr-x  4 root root 4.0K Mar 21 08:57 tz
+4.0K drwxr-xr-x  2 root root 4.0K Mar 21 08:57 utils
+
+bash-5.2# poetry env info -p
+bash-5.2# echo $?
+1
+```
+
+これをしない場合、`virtualenvs.options.no-pip` ` virtualenvs.options.no-setuptools` あたりを `true` にしておくと、不要なものが減ってよいかもしれない。
+```sh
+bash-5.2# poetry config virtualenvs.create true
+bash-5.2# poetry config virtualenvs.options.no-pip true
+bash-5.2# poetry config virtualenvs.options.no-setuptools true
+
+bash-5.2# poetry install --no-root
+Creating virtualenv poetry-local-installation in /usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/.venv
+Installing dependencies from lock file
+
+Package operations: 4 installs, 0 updates, 0 removals
+
+  • Installing six (1.16.0)
+  • Installing python-dateutil (2.8.2)
+  • Installing pytzdata (2020.1)
+  • Installing pendulum (2.1.2)
+
+bash-5.2# ls -lsah .venv
+total 8.0K
+   0 drwxr-xr-x  7 root root 224 Mar 21 09:02 .
+   0 drwxrwxr-x  9 root root 288 Mar 21 09:02 ..
+4.0K -rw-r--r--  1 root root  40 Mar 21 09:02 .gitignore
+   0 drwxr-xr-x 11 root root 352 Mar 21 09:02 bin
+   0 drwxr-xr-x  3 root root  96 Mar 21 09:02 lib
+   0 drwxr-xr-x  3 root root  96 Mar 21 09:02 lib64
+4.0K -rw-r--r--  1 root root 250 Mar 21 09:02 pyvenv.cfg
+bash-5.2# ls -lsah .venv/bin
+total 24K
+   0 drwxr-xr-x 11 root root  352 Mar 21 09:02 .
+   0 drwxr-xr-x  7 root root  224 Mar 21 09:02 ..
+4.0K -rw-r--r--  1 root root 2.3K Mar 21 09:02 activate
+4.0K -rw-r--r--  1 root root 1.6K Mar 21 09:02 activate.csh
+4.0K -rw-r--r--  1 root root 3.1K Mar 21 09:02 activate.fish
+4.0K -rw-r--r--  1 root root 3.4K Mar 21 09:02 activate.nu
+4.0K -rw-r--r--  1 root root 1.8K Mar 21 09:02 activate.ps1
+4.0K -rw-r--r--  1 root root 1.2K Mar 21 09:02 activate_this.py
+   0 lrwxr-xr-x  1 root root   18 Mar 21 09:02 python -> /usr/bin/python3.9
+   0 lrwxr-xr-x  1 root root    6 Mar 21 09:02 python3 -> python
+   0 lrwxr-xr-x  1 root root    6 Mar 21 09:02 python3.9 -> python
+
+bash-5.2# poetry env info -p
+/usr/local/lib/tamakiii/zenn.dev/articles/poetry-local-installation/.venv
+bash-5.2# echo $?
+0
+```
+
+そもそも `virtualenv` を使うモチベーションがないのであれば、`virtualenvs.create` を `false` に設定してしまうのがよさそうではある。
