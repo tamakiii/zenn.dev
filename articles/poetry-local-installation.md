@@ -2,7 +2,7 @@
 title: "poetry でプロジェクト内にパッケージをインストールする"
 emoji: "🐍"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ['poetry', 'python', 'pip']
+topics: ['poetry', 'python', 'pip', 'venv', 'virtualenv']
 published: false
 ---
 
